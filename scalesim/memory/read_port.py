@@ -1,5 +1,6 @@
 # Dummy memory like interface to service the requests of the last level memory
 
+
 class read_port:
     def __init__(self):
         self.latency = 1

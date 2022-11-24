@@ -28,11 +28,11 @@ class memory_map:
 
     #
     def scale_single_bank_params(self, num_layers=1):
-        me = 'memory_map.' + 'scale_single_bank_params()'
+        me = "memory_map." + "scale_single_bank_params()"
 
         if not self.map_data_valid:
-            message = 'ERROR: ' + me
-            message += ' : Initial single bank params need to be set first'
+            message = "ERROR: " + me
+            message += " : Initial single bank params need to be set first"
             print(message)
             return
 
@@ -47,92 +47,98 @@ class memory_map:
         self.num_mappings = num_layers
 
     #
-    def set_params(self, num_banks=1, ifmap_map_file='', filter_map_file='', ofmap_map_file=''):
+    def set_params(
+        self, num_banks=1, ifmap_map_file="", filter_map_file="", ofmap_map_file=""
+    ):
         success = 0
 
         if num_banks > 0:
             self.num_banks = num_banks
             success += 1
         else:
-            print('Error')
+            print("Error")
 
-        if not ifmap_map_file == '':
+        if not ifmap_map_file == "":
             success += self.read_ifmap_mapping_from_file(ifmap_map_file)
         else:
-            print('Error')
+            print("Error")
 
-        if not ofmap_map_file == '':
+        if not ofmap_map_file == "":
             success += self.read_ofmap_mapping_from_file(ofmap_map_file)
         else:
-            print('Error')
+            print("Error")
 
-        if not filter_map_file == '':
+        if not filter_map_file == "":
             success += self.read_filter_mapping_from_file(ifmap_map_file)
         else:
-            print('Error')
+            print("Error")
 
         if success == 4:
-            self.num_mappings = min(len(self.ifmap_map_list), len(self.filter_map_list), len(self.ofmap_map_list))      # Min is used for safety, all the three should be of same len
+            self.num_mappings = min(
+                len(self.ifmap_map_list),
+                len(self.filter_map_list),
+                len(self.ofmap_map_list),
+            )  # Min is used for safety, all the three should be of same len
             self.map_data_valid = True
 
     #
-    def read_ifmap_mapping_from_file(self, filename = ''):
+    def read_ifmap_mapping_from_file(self, filename=""):
         try:
-            f = open(filename,'r')
+            f = open(filename, "r")
 
             for row in f:
-                elems = [int(x.strip()) for x in row.strip().split(',')]
+                elems = [int(x.strip()) for x in row.strip().split(",")]
                 self.ifmap_map_list.append(elems[self.num_banks])
 
             return 1
 
         except:
-            print('Unable to read ifmap mapping from ' + filename)
+            print("Unable to read ifmap mapping from " + filename)
             return 0
 
     #
-    def read_filter_mapping_from_file(self, filename=''):
+    def read_filter_mapping_from_file(self, filename=""):
         try:
-            f = open(filename, 'r')
+            f = open(filename, "r")
 
             for row in f:
-                elems = [int(x.strip()) for x in row.strip().split(',')]
-                self.filter_map_list.append(elems[:self.num_banks])
+                elems = [int(x.strip()) for x in row.strip().split(",")]
+                self.filter_map_list.append(elems[: self.num_banks])
 
             return 1
 
         except:
-            print('Unable to read filter mapping from ' + filename)
+            print("Unable to read filter mapping from " + filename)
             return 0
 
     #
-    def read_ofmap_mapping_from_file(self, filename=''):
+    def read_ofmap_mapping_from_file(self, filename=""):
         try:
-            f = open(filename, 'r')
+            f = open(filename, "r")
 
             for row in f:
-                elems = [int(x.strip()) for x in row.strip().split(',')]
-                self.ofmap_map_list.append(elems[:self.num_banks])
+                elems = [int(x.strip()) for x in row.strip().split(",")]
+                self.ofmap_map_list.append(elems[: self.num_banks])
 
             return 1
 
         except:
-            print('Unable to read ofmap mapping from ' + filename)
+            print("Unable to read ofmap mapping from " + filename)
             return 0
 
     #
     def get_ifmap_mapping(self, layer_id=0):
-        me = 'memory_map.' + 'get_ifmap_mapping'
+        me = "memory_map." + "get_ifmap_mapping"
 
         if not self.map_data_valid:
-            message = 'ERROR: ' + me
-            message += ' : Mapping not valid'
+            message = "ERROR: " + me
+            message += " : Mapping not valid"
             print(message)
             return
 
         if not layer_id < self.num_mappings:
-            message = 'ERROR: ' + me
-            message += ' : No associated mapping for this layer'
+            message = "ERROR: " + me
+            message += " : No associated mapping for this layer"
             print(message)
             return
 
@@ -144,17 +150,17 @@ class memory_map:
 
     #
     def get_filter_mapping(self, layer_id=0):
-        me = 'memory_map.' + 'get_filter_mapping'
+        me = "memory_map." + "get_filter_mapping"
 
         if not self.map_data_valid:
-            message = 'ERROR: ' + me
-            message += ' : Mapping not valid'
+            message = "ERROR: " + me
+            message += " : Mapping not valid"
             print(message)
             return
 
         if not layer_id < self.num_mappings:
-            message = 'ERROR: ' + me
-            message += ' : No associated mapping for this layer'
+            message = "ERROR: " + me
+            message += " : No associated mapping for this layer"
             print(message)
             return
 
@@ -166,20 +172,19 @@ class memory_map:
 
     #
     def get_ofmap_mapping(self, layer_id=0):
-        me = 'memory_map.' + 'get_ofmap_mapping'
+        me = "memory_map." + "get_ofmap_mapping"
 
         if not self.map_data_valid:
-            message = 'ERROR: ' + me
-            message += ' : Mapping not valid'
+            message = "ERROR: " + me
+            message += " : Mapping not valid"
             print(message)
             return
 
         if not layer_id < self.num_mappings:
-            message = 'ERROR: ' + me
-            message += ' : No associated mapping for this layer'
+            message = "ERROR: " + me
+            message += " : No associated mapping for this layer"
             print(message)
             return
-
 
         # Ensure that we are sending a list out
         if len([self.ofmap_map_list[layer_id]]) == 1:

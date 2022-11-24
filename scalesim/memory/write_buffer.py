@@ -3,7 +3,8 @@
 import time
 import math
 import numpy as np
-#import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scalesim.memory.write_port import write_port
 
@@ -17,7 +18,9 @@ class write_buffer:
 
         # Buffer properties: Calculated
         self.total_size_elems = math.floor(self.total_size_bytes / self.word_size)
-        self.active_buf_size = int(math.ceil(self.total_size_elems * self.active_buf_frac))
+        self.active_buf_size = int(
+            math.ceil(self.total_size_elems * self.active_buf_frac)
+        )
         self.drain_buf_size = self.total_size_elems - self.active_buf_size
 
         # Backing interface properties
@@ -32,7 +35,9 @@ class write_buffer:
         # Helper data structures for faster execution
         self.line_idx = 0
         self.current_line = np.ones((1, 1)) * -1
-        self.max_cache_lines = 2 ** 10              # TODO: This is arbitrary, check if this can be tuned
+        self.max_cache_lines = (
+            2**10
+        )  # TODO: This is arbitrary, check if this can be tuned
         self.trace_matrix_cache = np.zeros((1, 1))
 
         # Access counts
@@ -55,10 +60,14 @@ class write_buffer:
         self.trace_matrix_empty = True
 
     #
-    def set_params(self, backing_buf_obj,
-                   total_size_bytes=128, word_size=1, active_buf_frac=0.9,
-                   backing_buf_bw=100
-                   ):
+    def set_params(
+        self,
+        backing_buf_obj,
+        total_size_bytes=128,
+        word_size=1,
+        active_buf_frac=0.9,
+        backing_buf_bw=100,
+    ):
         self.total_size_bytes = total_size_bytes
         self.word_size = word_size
 
@@ -69,7 +78,9 @@ class write_buffer:
         self.req_gen_bandwidth = backing_buf_bw
 
         self.total_size_elems = math.floor(self.total_size_bytes / self.word_size)
-        self.active_buf_size = int(math.ceil(self.total_size_elems * self.active_buf_frac))
+        self.active_buf_size = int(
+            math.ceil(self.total_size_elems * self.active_buf_frac)
+        )
         self.drain_buf_size = self.total_size_elems - self.active_buf_size
         self.free_space = self.total_size_elems
 
@@ -102,7 +113,7 @@ class write_buffer:
         if elem == -1:
             return
 
-        if self.current_line.shape == (1,1):    # This line is empty
+        if self.current_line.shape == (1, 1):  # This line is empty
             self.current_line = np.ones((1, self.req_gen_bandwidth)) * -1
 
         self.current_line[0, self.line_idx] = elem
@@ -117,9 +128,11 @@ class write_buffer:
                 self.trace_matrix_cache = self.current_line
                 self.trace_matrix_cache_empty = False
             else:
-                self.trace_matrix_cache = np.concatenate((self.trace_matrix_cache, self.current_line), axis=0)
+                self.trace_matrix_cache = np.concatenate(
+                    (self.trace_matrix_cache, self.current_line), axis=0
+                )
 
-            self.current_line = np.ones((1,1)) * -1
+            self.current_line = np.ones((1, 1)) * -1
             self.line_idx = 0
 
             if not self.trace_matrix_cache.shape[0] < self.max_cache_lines:
@@ -127,37 +140,45 @@ class write_buffer:
 
     #
     def append_to_trace_mat(self, force=False):
-        if force:   # This forces the contents for self.current_line and self.trace_matrix cache to be dumped
+        if (
+            force
+        ):  # This forces the contents for self.current_line and self.trace_matrix cache to be dumped
             if not self.line_idx == 0:
-                #if self.trace_matrix_cache.shape == (1,1):
+                # if self.trace_matrix_cache.shape == (1,1):
                 if self.trace_matrix_cache_empty:
                     self.trace_matrix_cache = self.current_line
                     self.trace_matrix_cache_empty = False
                 else:
-                    self.trace_matrix_cache = np.concatenate((self.trace_matrix_cache, self.current_line), axis=0)
+                    self.trace_matrix_cache = np.concatenate(
+                        (self.trace_matrix_cache, self.current_line), axis=0
+                    )
 
-                self.current_line = np.ones((1,1)) * -1
+                self.current_line = np.ones((1, 1)) * -1
                 self.line_idx = 0
         # Fixing ISSUE #10
         # if self.trace_matrix_cache.shape == (1,1):
         if self.trace_matrix_cache_empty:
             return
 
-        #if self.trace_matrix.shape == (1,1):
+        # if self.trace_matrix.shape == (1,1):
         if self.trace_matrix_empty:
             self.trace_matrix = self.trace_matrix_cache
             self.drain_buf_start_line_id = 0
             self.trace_matrix_empty = False
         else:
-            self.trace_matrix = np.concatenate((self.trace_matrix, self.trace_matrix_cache), axis=0)
+            self.trace_matrix = np.concatenate(
+                (self.trace_matrix, self.trace_matrix_cache), axis=0
+            )
 
-        self.trace_matrix_cache = np.zeros((1,1))
+        self.trace_matrix_cache = np.zeros((1, 1))
         # Fixing ISSUE #10
         self.trace_matrix_cache_empty = True
 
     #
     def service_writes(self, incoming_requests_arr_np, incoming_cycles_arr_np):
-        assert incoming_cycles_arr_np.shape[0] == incoming_requests_arr_np.shape[0], 'Cycles and requests do not match'
+        assert (
+            incoming_cycles_arr_np.shape[0] == incoming_requests_arr_np.shape[0]
+        ), "Cycles and requests do not match"
         out_cycles_arr = []
         offset = 0
 
@@ -183,47 +204,59 @@ class write_buffer:
 
                 elif self.free_space < (self.total_size_elems - self.drain_buf_size):
                     self.append_to_trace_mat(force=True)
-                    self.drain_end_cycle = self.empty_drain_buf(empty_start_cycle=current_cycle)
+                    self.drain_end_cycle = self.empty_drain_buf(
+                        empty_start_cycle=current_cycle
+                    )
 
             out_cycles_arr.append(current_cycle)
 
         num_lines = incoming_requests_arr_np.shape[0]
         out_cycles_arr_np = np.asarray(out_cycles_arr).reshape((num_lines, 1))
 
-        #print('DEBUG: Num Drains = ' + str(DEBUG_num_drains))
-        #print('DEBUG: Num appeneds = ' + str(len(DEBUG_append_to_trace_times)))
-        #plt.plot(DEBUG_append_to_trace_times)
-        #plt.show()
+        # print('DEBUG: Num Drains = ' + str(DEBUG_num_drains))
+        # print('DEBUG: Num appeneds = ' + str(len(DEBUG_append_to_trace_times)))
+        # plt.plot(DEBUG_append_to_trace_times)
+        # plt.show()
 
         return out_cycles_arr_np
 
     #
     def empty_drain_buf(self, empty_start_cycle=0):
 
-        lines_to_fill_dbuf = int(math.ceil(self.drain_buf_size / self.req_gen_bandwidth))
+        lines_to_fill_dbuf = int(
+            math.ceil(self.drain_buf_size / self.req_gen_bandwidth)
+        )
         self.drain_buf_end_line_id = self.drain_buf_start_line_id + lines_to_fill_dbuf
-        self.drain_buf_end_line_id = min(self.drain_buf_end_line_id, self.trace_matrix.shape[0])
+        self.drain_buf_end_line_id = min(
+            self.drain_buf_end_line_id, self.trace_matrix.shape[0]
+        )
 
-        requests_arr_np = self.trace_matrix[self.drain_buf_start_line_id: self.drain_buf_end_line_id, :]
+        requests_arr_np = self.trace_matrix[
+            self.drain_buf_start_line_id : self.drain_buf_end_line_id, :
+        ]
         num_lines = requests_arr_np.shape[0]
 
         data_sz_to_drain = num_lines * requests_arr_np.shape[1]
         # Adjust for -1
-        for elem in requests_arr_np[-1,:]:
+        for elem in requests_arr_np[-1, :]:
             if elem == -1:
                 data_sz_to_drain -= 1
         self.num_access += data_sz_to_drain
 
-        cycles_arr = [x+empty_start_cycle for x in range(num_lines)]
+        cycles_arr = [x + empty_start_cycle for x in range(num_lines)]
         cycles_arr_np = np.asarray(cycles_arr).reshape((num_lines, 1))
-        serviced_cycles_arr = self.backing_buffer.service_writes(requests_arr_np, cycles_arr_np)
+        serviced_cycles_arr = self.backing_buffer.service_writes(
+            requests_arr_np, cycles_arr_np
+        )
 
         # Assign the cycles vector which will be used to generate the complete trace
         if not self.trace_valid:
             self.cycles_vec = serviced_cycles_arr
             self.trace_valid = True
         else:
-            self.cycles_vec = np.concatenate((self.cycles_vec, serviced_cycles_arr), axis=0)
+            self.cycles_vec = np.concatenate(
+                (self.cycles_vec, serviced_cycles_arr), axis=0
+            )
 
         service_end_cycle = serviced_cycles_arr[-1][0]
         self.free_space += data_sz_to_drain
@@ -236,7 +269,7 @@ class write_buffer:
         self.append_to_trace_mat(force=True)
 
         if self.trace_matrix_empty:
-           return
+            return
 
         while self.drain_buf_start_line_id < self.trace_matrix.shape[0]:
             self.drain_end_cycle = self.empty_drain_buf(empty_start_cycle=cycle)
@@ -245,7 +278,7 @@ class write_buffer:
     #
     def get_trace_matrix(self):
         if not self.trace_valid:
-            print('No trace has been generated yet')
+            print("No trace has been generated yet")
             return
 
         trace_matrix = np.concatenate((self.cycles_vec, self.trace_matrix), axis=1)
@@ -258,12 +291,12 @@ class write_buffer:
 
     #
     def get_num_accesses(self):
-        assert self.trace_valid, 'Traces not ready yet'
+        assert self.trace_valid, "Traces not ready yet"
         return self.num_access
 
     #
     def get_external_access_start_stop_cycles(self):
-        assert self.trace_valid, 'Traces not ready yet'
+        assert self.trace_valid, "Traces not ready yet"
         start_cycle = self.cycles_vec[0][0]
         end_cycle = self.cycles_vec[-1][0]
 
@@ -272,7 +305,7 @@ class write_buffer:
     #
     def print_trace(self, filename):
         if not self.trace_valid:
-            print('No trace has been generated yet')
+            print("No trace has been generated yet")
             return
         trace_matrix = self.get_trace_matrix()
-        np.savetxt(filename, trace_matrix, fmt='%s', delimiter=",")
+        np.savetxt(filename, trace_matrix, fmt="%s", delimiter=",")

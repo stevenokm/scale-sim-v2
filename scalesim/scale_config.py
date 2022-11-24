@@ -16,7 +16,7 @@ class scale_config:
         self.ifmap_sz_kb = 256
         self.filter_sz_kb = 256
         self.ofmap_sz_kb = 128
-        self.df = 'ws'
+        self.df = "ws"
         self.ifmap_offset = 0
         self.filter_offset = 10000000
         self.ofmap_offset = 20000000
@@ -27,93 +27,100 @@ class scale_config:
 
         self.valid_conf_flag = False
 
-        self.valid_df_list = ['os', 'ws', 'is']
+        self.valid_df_list = ["os", "ws", "is"]
 
     #
     def read_conf_file(self, conf_file_in):
 
-        me = 'scale_config.' + 'read_conf_file()'
+        me = "scale_config." + "read_conf_file()"
 
         config = cp.ConfigParser()
         config.read(conf_file_in)
 
-        section = 'general'
-        self.run_name = config.get(section, 'run_name')
+        section = "general"
+        self.run_name = config.get(section, "run_name")
 
         # Anand: ISSUE #2. Patch
-        section = 'run_presets'
-        bw_mode_string = config.get(section, 'InterfaceBandwidth')
-        if bw_mode_string == 'USER':
+        section = "run_presets"
+        bw_mode_string = config.get(section, "InterfaceBandwidth")
+        if bw_mode_string == "USER":
             self.use_user_bandwidth = True
-        elif bw_mode_string == 'CALC':
+        elif bw_mode_string == "CALC":
             self.use_user_bandwidth = False
         else:
-            message = 'ERROR: ' + me
-            message += 'Use either USER or CALC in InterfaceBandwidth feild. Aborting!'
+            message = "ERROR: " + me
+            message += "Use either USER or CALC in InterfaceBandwidth feild. Aborting!"
             return
 
-        section = 'architecture_presets'
-        self.array_rows = int(config.get(section, 'ArrayHeight'))
-        self.array_cols = int(config.get(section, 'ArrayWidth'))
-        self.ifmap_sz_kb = int(config.get(section, 'ifmapsramszkB'))
-        self.filter_sz_kb = int(config.get(section, 'filtersramszkB'))
-        self.ofmap_sz_kb = int(config.get(section, 'ofmapsramszkB'))
-        self.ifmap_offset = int(config.get(section, 'IfmapOffset'))
-        self.filter_offset = int(config.get(section, 'FilterOffset'))
-        self.ofmap_offset = int(config.get(section, 'OfmapOffset'))
-        self.df = config.get(section, 'Dataflow')
-        self.memory_banks = int(config.get(section, 'MemoryBanks').strip())
+        section = "architecture_presets"
+        self.array_rows = int(config.get(section, "ArrayHeight"))
+        self.array_cols = int(config.get(section, "ArrayWidth"))
+        self.ifmap_sz_kb = int(config.get(section, "ifmapsramszkB"))
+        self.filter_sz_kb = int(config.get(section, "filtersramszkB"))
+        self.ofmap_sz_kb = int(config.get(section, "ofmapsramszkB"))
+        self.ifmap_offset = int(config.get(section, "IfmapOffset"))
+        self.filter_offset = int(config.get(section, "FilterOffset"))
+        self.ofmap_offset = int(config.get(section, "OfmapOffset"))
+        self.df = config.get(section, "Dataflow")
+        self.memory_banks = int(config.get(section, "MemoryBanks").strip())
 
         # Anand: ISSUE #2. Patch
         if self.use_user_bandwidth:
-            self.bandwidths = [int(x.strip())
-                               for x in config.get(section, 'Bandwidth').strip().split(',')]
+            self.bandwidths = [
+                int(x.strip())
+                for x in config.get(section, "Bandwidth").strip().split(",")
+            ]
 
             # Anand: ISSUE #12. Fix
-            assert self.memory_banks == len(self.bandwidths), \
-                'In USER mode bandwidths for each memory bank is a required input'
+            assert self.memory_banks == len(
+                self.bandwidths
+            ), "In USER mode bandwidths for each memory bank is a required input"
 
         if self.df not in self.valid_df_list:
             print("WARNING: Invalid dataflow")
 
         # Anand: Added the memory bank check to avoid stray errors
         if self.memory_banks > 1:
-            section = 'memory_map_files'
-            if not os.path.exists(config.get(section, 'MemoryMapIfmap')):
+            section = "memory_map_files"
+            if not os.path.exists(config.get(section, "MemoryMapIfmap")):
                 print("Ifmap file does not exist")
                 sys.exit(-1)
-            ifmap_mem_map_file = config.get(section, 'MemoryMapIfmap')
+            ifmap_mem_map_file = config.get(section, "MemoryMapIfmap")
 
-            if not os.path.exists(config.get(section, 'MemoryMapFilter')):
+            if not os.path.exists(config.get(section, "MemoryMapFilter")):
                 print("Filter file does not exist")
                 sys.exit(-1)
-            filter_mem_map_file = config.get(section, 'MemoryMapFilter')
+            filter_mem_map_file = config.get(section, "MemoryMapFilter")
 
-            if not os.path.exists(config.get(section, 'MemoryMapOfmap')):
+            if not os.path.exists(config.get(section, "MemoryMapOfmap")):
                 print("Ofmap file does not exist")
                 sys.exit(-1)
 
-            ofmap_mem_map_file = config.get(section, 'MemoryMapOfmap')
+            ofmap_mem_map_file = config.get(section, "MemoryMapOfmap")
 
-            self.memory_map.set_params(num_banks=self.memory_banks,
-                                       ifmap_map_file=ifmap_mem_map_file,
-                                       filter_map_file=filter_mem_map_file,
-                                       ofmap_map_file=ofmap_mem_map_file
-                                       )
+            self.memory_map.set_params(
+                num_banks=self.memory_banks,
+                ifmap_map_file=ifmap_mem_map_file,
+                filter_map_file=filter_mem_map_file,
+                ofmap_map_file=ofmap_mem_map_file,
+            )
         elif self.memory_banks == 1:
-            self.memory_map.set_single_bank_params( filter_offset=self.filter_offset,
-                                                    ofmap_offset=self.ofmap_offset)
+            self.memory_map.set_single_bank_params(
+                filter_offset=self.filter_offset, ofmap_offset=self.ofmap_offset
+            )
 
-        if config.has_section('network_presets'):  # Read network_presets
-            self.topofile = config.get(section, 'TopologyCsvLoc').split('"')[1]
+        if config.has_section("network_presets"):  # Read network_presets
+            self.topofile = config.get(section, "TopologyCsvLoc").split('"')[1]
 
         self.valid_conf_flag = True
 
     #
     def update_from_list(self, conf_list):
         if not len(conf_list) > 11:
-            print("ERROR: scale_config.update_from_list: "
-                  "Incompatible number of elements in the list")
+            print(
+                "ERROR: scale_config.update_from_list: "
+                "Incompatible number of elements in the list"
+            )
 
         self.run_name = conf_list[0]
         self.array_rows = int(conf_list[1])
@@ -127,12 +134,12 @@ class scale_config:
         self.df = conf_list[9]
         bw_mode_string = str(conf_list[10])
 
-        assert bw_mode_string in ['CALC', 'USER'], 'Invalid mode of operation'
+        assert bw_mode_string in ["CALC", "USER"], "Invalid mode of operation"
         if bw_mode_string == "USER":
-            assert not len(conf_list) < 12, 'The user bandwidth needs to be provided'
+            assert not len(conf_list) < 12, "The user bandwidth needs to be provided"
             self.bandwidths = conf_list[11]
             self.use_user_bandwidth = True
-        elif bw_mode_string == 'CALC':
+        elif bw_mode_string == "CALC":
             self.use_user_bandwidth = False
 
         if len(conf_list) > 12:
@@ -141,13 +148,17 @@ class scale_config:
             self.memory_banks = 1
 
         if bw_mode_string == "USER":
-            assert len(self.bandwidths) == self.memory_banks, 'Bandwidths and num banks dont match'
+            assert (
+                len(self.bandwidths) == self.memory_banks
+            ), "Bandwidths and num banks dont match"
 
         if self.memory_banks > 1:
-            assert not len(conf_list) < 14, 'Memory maps should be provided'
+            assert not len(conf_list) < 14, "Memory maps should be provided"
             self.memory_map = conf_list[13]
 
-            assert len(self.memory_map) == self.memory_banks, 'Each bank should have an unique map'
+            assert (
+                len(self.memory_map) == self.memory_banks
+            ), "Each bank should have an unique map"
 
         if len(conf_list) == 15:
             self.topofile = conf_list[14]
@@ -157,47 +168,47 @@ class scale_config:
     #
     def write_conf_file(self, conf_file_out):
         if not self.valid_conf_flag:
-            print('ERROR: scale_config.write_conf_file: No valid config loaded')
+            print("ERROR: scale_config.write_conf_file: No valid config loaded")
             return
 
         config = cp.ConfigParser()
 
-        section = 'general'
+        section = "general"
         config.add_section(section)
-        config.set(section, 'run_name', str(self.run_name))
+        config.set(section, "run_name", str(self.run_name))
 
-        section = 'architecture_presets'
+        section = "architecture_presets"
         config.add_section(section)
-        config.set(section, 'ArrayHeight', str(self.array_rows))
-        config.set(section, 'ArrayWidth', str(self.array_cols))
+        config.set(section, "ArrayHeight", str(self.array_rows))
+        config.set(section, "ArrayWidth", str(self.array_cols))
 
-        config.set(section, 'ifmapsramszkB', str(self.ifmap_sz_kb))
-        config.set(section, 'filtersramszkB', str(self.filter_sz_kb))
-        config.set(section, 'ofmapsramszkB', str(self.ofmap_sz_kb))
+        config.set(section, "ifmapsramszkB", str(self.ifmap_sz_kb))
+        config.set(section, "filtersramszkB", str(self.filter_sz_kb))
+        config.set(section, "ofmapsramszkB", str(self.ofmap_sz_kb))
 
-        config.set(section, 'IfmapOffset', str(self.ifmap_offset))
-        config.set(section, 'FilterOffset', str(self.filter_offset))
-        config.set(section, 'OfmapOffset', str(self.ofmap_offset))
+        config.set(section, "IfmapOffset", str(self.ifmap_offset))
+        config.set(section, "FilterOffset", str(self.filter_offset))
+        config.set(section, "OfmapOffset", str(self.ofmap_offset))
 
-        config.set(section, 'Dataflow', str(self.df))
-        config.set(section, 'Bandwidth', ','.join([str(x) for x in self.bandwidths]))
-        config.set(section, 'MemoryBanks', str(self.memory_banks))
+        config.set(section, "Dataflow", str(self.df))
+        config.set(section, "Bandwidth", ",".join([str(x) for x in self.bandwidths]))
+        config.set(section, "MemoryBanks", str(self.memory_banks))
 
-        section = 'network_presets'
+        section = "network_presets"
         config.add_section(section)
         topofile = '"' + self.topofile + '"'
-        config.set(section, 'TopologyCsvLoc', str(topofile))
+        config.set(section, "TopologyCsvLoc", str(topofile))
 
-        with open(conf_file_out, 'w') as configfile:
+        with open(conf_file_out, "w") as configfile:
             config.write(configfile)
 
     #
     def scale_memory_maps(self, num_layers=1):
-        me = 'scale_config.' + 'scale_memory_maps'
+        me = "scale_config." + "scale_memory_maps"
 
         if not self.valid_conf_flag:
-            message = 'ERROR: ' + me
-            message += ': Config needs to be read/set first'
+            message = "ERROR: " + me
+            message += ": Config needs to be read/set first"
             print(message)
             return
 
@@ -210,7 +221,7 @@ class scale_config:
         self.array_cols = cols
 
     #
-    def set_dataflow(self, dataflow='os'):
+    def set_dataflow(self, dataflow="os"):
         self.df = dataflow
 
     #
@@ -220,15 +231,13 @@ class scale_config:
         self.ofmap_sz_kb = ofmap_size_kb
 
     #
-    def set_topology_file(self, topofile=''):
+    def set_topology_file(self, topofile=""):
         self.topofile = topofile
 
     #
-    def set_offsets(self,
-                    ifmap_offset=0,
-                    filter_offset=10000000,
-                    ofmap_offset=20000000
-                    ):
+    def set_offsets(
+        self, ifmap_offset=0, filter_offset=10000000, ofmap_offset=20000000
+    ):
         self.ifmap_offset = ifmap_offset
         self.filter_offset = filter_offset
         self.ifmap_offset = ofmap_offset
@@ -245,8 +254,8 @@ class scale_config:
     #
     def use_user_dram_bandwidth(self):
         if not self.valid_conf_flag:
-            me = 'scale_config.' + 'use_user_dram_bandwidth()'
-            message = 'ERROR: ' + me + ': Configuration is not valid'
+            me = "scale_config." + "use_user_dram_bandwidth()"
+            message = "ERROR: " + me + ": Configuration is not valid"
             print(message)
             return
 
@@ -301,8 +310,8 @@ class scale_config:
             print("ERROR: scale_config.get_topology_name() : Config data is not valid")
             return
 
-        name = self.topofile.split('/')[-1].strip()
-        name = name.split('.')[0]
+        name = self.topofile.split("/")[-1].strip()
+        name = name.split(".")[0]
 
         return name
 
@@ -315,11 +324,11 @@ class scale_config:
             return self.array_rows, self.array_cols
 
     def get_mem_sizes(self):
-        me = 'scale_config.' + 'get_mem_sizes()'
+        me = "scale_config." + "get_mem_sizes()"
 
         if not self.valid_conf_flag:
-            message = 'ERROR: ' + me
-            message += 'Config is not valid. Not returning any values'
+            message = "ERROR: " + me
+            message += "Config is not valid. Not returning any values"
             return
 
         return self.ifmap_sz_kb, self.filter_sz_kb, self.ofmap_sz_kb
@@ -330,7 +339,7 @@ class scale_config:
 
     def get_bandwidths_as_string(self):
         if self.valid_conf_flag:
-            return ','.join([str(x) for x in self.bandwidths])
+            return ",".join([str(x) for x in self.bandwidths])
 
     def get_mem_banks(self):
         if self.valid_conf_flag:
@@ -346,8 +355,8 @@ class scale_config:
 
     def get_min_dram_bandwidth(self):
         if not self.use_user_dram_bandwidth():
-            me = 'scale_config.' + 'get_min_dram_bandwidth()'
-            message = 'ERROR: ' + me + ': No user bandwidth provided'
+            me = "scale_config." + "get_min_dram_bandwidth()"
+            message = "ERROR: " + me + ": No user bandwidth provided"
             print(message)
         else:
             return min(self.bandwidths)

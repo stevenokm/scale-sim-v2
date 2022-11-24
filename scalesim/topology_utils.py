@@ -2,7 +2,6 @@ import math
 
 
 class topologies(object):
-
     def __init__(self):
         self.current_topo_name = ""
         self.topo_file_name = ""
@@ -27,8 +26,8 @@ class topologies(object):
 
     #
     def load_layer_params_from_list(self, layer_name, elems_list=[]):
-        self.topo_file_name = ''
-        self.current_toponame = ''
+        self.topo_file_name = ""
+        self.current_toponame = ""
         self.layer_name = layer_name
         self.append_topo_arrays(layer_name, elems_list)
 
@@ -36,23 +35,23 @@ class topologies(object):
         self.topo_load_flag = True
 
     #
-    def load_arrays(self, topofile='', mnk_inputs=False):
+    def load_arrays(self, topofile="", mnk_inputs=False):
         if mnk_inputs:
             self.load_arrays_gemm(topofile)
         else:
             self.load_arrays_conv(topofile)
 
     #
-    def load_arrays_gemm(self, topofile=''):
+    def load_arrays_gemm(self, topofile=""):
 
-        self.topo_file_name = topofile.split('/')[-1]
-        name_arr = self.topo_file_name.split('.')
+        self.topo_file_name = topofile.split("/")[-1]
+        name_arr = self.topo_file_name.split(".")
         if len(name_arr) > 1:
-            self.current_topo_name = self.topo_file_name.split('.')[-2]
+            self.current_topo_name = self.topo_file_name.split(".")[-2]
         else:
             self.current_topo_name = self.topo_file_name
 
-        f = open(topofile, 'r')
+        f = open(topofile, "r")
         first = True
 
         for row in f:
@@ -60,11 +59,11 @@ class topologies(object):
             if first:
                 first = False
                 continue
-            elif row == '':
+            elif row == "":
                 continue
             else:
-                elems = row.split(',')[:-1]
-                assert len(elems) > 3, 'There should be at least 4 entries per row'
+                elems = row.split(",")[:-1]
+                assert len(elems) > 3, "There should be at least 4 entries per row"
                 layer_name = elems[0].strip()
                 m = elems[1].strip()
                 n = elems[2].strip()
@@ -72,7 +71,7 @@ class topologies(object):
 
                 # Entries: layer name, Ifmap h, ifmap w, filter h, filter w, num_ch, num_filt, stride h, stride w
                 entries = [layer_name, m, k, 1, k, 1, n, 1, 1]
-                #entries are later iterated from index 1. Index 0 is used to store layer name in convolution mode. So, to rectify assignment of M, N and K in GEMM mode, layer name has been added at index 0 of entries. 
+                # entries are later iterated from index 1. Index 0 is used to store layer name in convolution mode. So, to rectify assignment of M, N and K in GEMM mode, layer name has been added at index 0 of entries.
                 self.append_topo_arrays(layer_name=layer_name, elems=entries)
 
         self.num_layers = len(self.topo_arrays)
@@ -81,21 +80,21 @@ class topologies(object):
     # Load the topology data from the file
     def load_arrays_conv(self, topofile=""):
         first = True
-        self.topo_file_name = topofile.split('/')[-1]
-        name_arr = self.topo_file_name.split('.')
+        self.topo_file_name = topofile.split("/")[-1]
+        name_arr = self.topo_file_name.split(".")
         if len(name_arr) > 1:
-            self.current_topo_name = self.topo_file_name.split('.')[-2]
+            self.current_topo_name = self.topo_file_name.split(".")[-2]
         else:
             self.current_topo_name = self.topo_file_name
-        f = open(topofile, 'r')
+        f = open(topofile, "r")
         for row in f:
             row = row.strip()
-            if first or row == '':
+            if first or row == "":
                 first = False
             else:
-                elems = row.split(',')[:-1]
+                elems = row.split(",")[:-1]
                 # depth-wise convolution
-                if 'DP' in elems[0].strip():
+                if "DP" in elems[0].strip():
                     for dp_layer in range(int(elems[5].strip())):
                         layer_name = elems[0].strip() + "Channel_" + str(dp_layer)
                         elems[5] = str(1)
@@ -108,13 +107,12 @@ class topologies(object):
         self.topo_load_flag = True
 
     # Write the contents into a csv file
-    def write_topo_file(self,
-                      path="",
-                      filename=""
-                      ):
+    def write_topo_file(self, path="", filename=""):
         if path == "":
-            print("WARNING: topology_utils.write_topo_file: No path specified writing to the cwd")
-            path = "./" 
+            print(
+                "WARNING: topology_utils.write_topo_file: No path specified writing to the cwd"
+            )
+            path = "./"
 
         if filename == "":
             print("ERROR: topology_utils.write_topo_file: No filename provided")
@@ -127,18 +125,18 @@ class topologies(object):
             return
 
         header = [
-                    "Layer name",
-                    "IFMAP height",
-                    "IFMAP width",
-                    "Filter height",
-                    "Filter width",
-                    "Channels",
-                    "Num filter",
-                    "Stride height",
-                    "Stride width"
-                ]
+            "Layer name",
+            "IFMAP height",
+            "IFMAP width",
+            "Filter height",
+            "Filter width",
+            "Channels",
+            "Num filter",
+            "Stride height",
+            "Stride width",
+        ]
 
-        f = open(filename, 'w')
+        f = open(filename, "w")
         log = ",".join(header)
         log += ",\n"
         f.write(log)
@@ -158,17 +156,19 @@ class topologies(object):
             val = int(str(elems[i]).strip())
             entry.append(val)
             if i == 7 and len(elems) < 9:
-                entry.append(val)  # Add the same stride in the col direction automatically
+                entry.append(
+                    val
+                )  # Add the same stride in the col direction automatically
 
         # ISSUE #9 Fix
-        assert entry[3] <= entry[1], 'Filter height cannot be larger than IFMAP height'
-        assert entry[4] <= entry[2], 'Filter width cannot be larger than IFMAP width'
+        assert entry[3] <= entry[1], "Filter height cannot be larger than IFMAP height"
+        assert entry[4] <= entry[2], "Filter width cannot be larger than IFMAP width"
 
         self.topo_arrays.append(entry)
 
     # create network topology array
     def append_topo_entry_from_list(self, layer_entry_list=[]):
-        assert 7 < len(layer_entry_list) < 10, 'Incorrect number of parameters'
+        assert 7 < len(layer_entry_list) < 10, "Incorrect number of parameters"
 
         entry = [str(layer_entry_list[0])]
 
@@ -176,13 +176,15 @@ class topologies(object):
             val = int(str(layer_entry_list[i]).strip())
             entry.append(val)
             if i == 7 and len(layer_entry_list) < 9:
-                entry.append(val)           # Add the same stride in the col direction automatically
+                entry.append(
+                    val
+                )  # Add the same stride in the col direction automatically
 
-        self.append_layer_entry(entry,toponame=self.current_topo_name)
+        self.append_layer_entry(entry, toponame=self.current_topo_name)
 
     # add to the existing data from a list
     def append_layer_entry(self, entry, toponame=""):
-        assert len(entry) == 9, 'Incorrect number of parameters'
+        assert len(entry) == 9, "Incorrect number of parameters"
 
         if not toponame == "":
             self.current_topo_name = toponame
@@ -202,7 +204,7 @@ class topologies(object):
             ifmap_w = array[2]
             filt_h = array[3]
             filt_w = array[4]
-            num_ch   = array[5]
+            num_ch = array[5]
             num_filt = array[6]
             stride_h = array[7]
             stride_w = array[8]
@@ -214,24 +216,24 @@ class topologies(object):
             self.layers_calculated_hyperparams.append(entry)
         self.topo_calc_hyper_param_flag = True
 
-    def calc_spatio_temporal_params(self, df='os', layer_id=0):
+    def calc_spatio_temporal_params(self, df="os", layer_id=0):
         s_row = -1
         s_col = -1
         t_time = -1
         if self.topo_calc_hyper_param_flag:
-            num_filt  = self.get_layer_num_filters(layer_id= layer_id)
+            num_filt = self.get_layer_num_filters(layer_id=layer_id)
             num_ofmap = self.get_layer_num_ofmap_px(layer_id=layer_id)
             num_ofmap = int(num_ofmap / num_filt)
             window_sz = self.get_layer_window_size(layer_id=layer_id)
-            if df == 'os':
+            if df == "os":
                 s_row = num_ofmap
                 s_col = num_filt
                 t_time = window_sz
-            elif df == 'ws':
+            elif df == "ws":
                 s_row = window_sz
                 s_col = num_filt
                 t_time = num_ofmap
-            elif df == 'is':
+            elif df == "is":
                 s_row = window_sz
                 s_col = num_ofmap
                 t_time = num_filt
@@ -242,9 +244,9 @@ class topologies(object):
     def set_spatio_temporal_params(self):
         if not self.topo_calc_hyper_param_flag:
             self.topo_calc_hyperparams(self.topo_file_name)
-        for i  in range(self.num_layers):
+        for i in range(self.num_layers):
             this_layer_params_arr = []
-            for df in ['os', 'ws', 'is']:
+            for df in ["os", "ws", "is"]:
                 sr, sc, tt = self.calc_spatio_temporal_params(df=df, layer_id=i)
                 this_layer_params_arr.append([sr, sc, tt])
             self.spatio_temp_dim_arrays.append(this_layer_params_arr)
@@ -264,13 +266,12 @@ class topologies(object):
 
         return mnk_dims_arr
 
-
     def get_current_topo_name(self):
         current_topo_name = ""
         if self.topo_load_flag:
             current_topo_name = self.current_topo_name
         else:
-            print('Error: get_current_topo_name(): Topo file not read')
+            print("Error: get_current_topo_name(): Topo file not read")
         return current_topo_name
 
     def get_num_layers(self):
@@ -285,7 +286,7 @@ class topologies(object):
             print("ERROR: topologies.get_layer_ifmap_dims: Invalid layer id")
 
         layer_params = self.topo_arrays[layer_id]
-        return layer_params[1:3]    # Idx = 1, 2
+        return layer_params[1:3]  # Idx = 1, 2
 
     #
     def get_layer_filter_dims(self, layer_id=0):
@@ -293,7 +294,7 @@ class topologies(object):
             print("ERROR: topologies.get_layer_ifmap_dims: Invalid layer id")
 
         layer_params = self.topo_arrays[layer_id]
-        return layer_params[3:5]    # Idx = 3, 4
+        return layer_params[3:5]  # Idx = 3, 4
 
     #
     def get_layer_num_filters(self, layer_id=0):
@@ -316,7 +317,6 @@ class topologies(object):
         layer_params = self.topo_arrays[layer_id]
         return layer_params[7:9]
 
-
     def get_layer_window_size(self, layer_id=0):
         if not (self.topo_load_flag or self.num_layers - 1 < layer_id):
             print("ERROR: topologies.get_layer_num_filter: Invalid layer id")
@@ -332,7 +332,7 @@ class topologies(object):
             self.topo_calc_hyperparams()
         layer_calc_params = self.layers_calculated_hyperparams[layer_id]
         num_filters = self.get_layer_num_filters(layer_id)
-        num_ofmap_px = layer_calc_params[0] * layer_calc_params[1] * num_filters 
+        num_ofmap_px = layer_calc_params[0] * layer_calc_params[1] * num_filters
         return num_ofmap_px
 
     def get_layer_ofmap_dims(self, layer_id=0):
@@ -398,12 +398,12 @@ class topologies(object):
         return total_mac
 
     # spatio-temporal dimensions specific to dataflow
-    def get_spatiotemporal_dims(self, layer_id=0, df=''):
-        if df == '':
+    def get_spatiotemporal_dims(self, layer_id=0, df=""):
+        if df == "":
             df = self.df
         if not self.topo_calc_spatiotemp_params_flag:
             self.set_spatio_temporal_params()
-        df_list = ['os', 'ws', 'is']
+        df_list = ["os", "ws", "is"]
         df_idx = df_list.index(df)
         s_row = self.spatio_temp_dim_arrays[layer_id][df_idx][0]
         s_col = self.spatio_temp_dim_arrays[layer_id][df_idx][1]
@@ -411,5 +411,5 @@ class topologies(object):
         return s_row, s_col, t_time
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     tp = topologies()
